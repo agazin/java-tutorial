@@ -153,7 +153,7 @@ class EmployeeServiceTest {
     }
 
     @Test
-    void canDelete() {
+    void canDelete() throws Exception {
         //arrange
         Long id = 99L;
 

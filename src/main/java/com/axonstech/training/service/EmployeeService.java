@@ -54,11 +54,12 @@ public class EmployeeService {
                 return dto;
             });
         }
-        return employeeRepository.findAll(pageable).map(e -> {
+        Page<EmployeeDto> result = employeeRepository.findAll(pageable).map(e -> {
             EmployeeDto dto = new EmployeeDto();
             BeanUtils.copyProperties(e, dto);
             return dto;
         });
+        return result;
     }
 
     public EmployeeDto save(NewEmployeeRequest employeeRequest) throws Exception {
@@ -89,7 +90,10 @@ public class EmployeeService {
         return employeeDto;
     }
 
-    public void delete(Long id) {
+    public void delete(Long id) throws Exception {
+        if(!employeeRepository.existsById(id)){
+            throw new Exception("Id not found");
+        }
         employeeRepository.deleteById(id);
     }
 
