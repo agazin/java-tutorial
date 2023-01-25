@@ -18,14 +18,14 @@ public class EmployeeController {
         this.employeeService = employeeService;
     }
 
-    @GetMapping
+    @GetMapping // localhost:18080/api/employees
     public Page<EmployeeDto> getAllEmp(@RequestParam(name = "onlyActive", required = false) Boolean onlyActives,
                                     @RequestParam(required = false, defaultValue = "1") int page,
                                     @RequestParam(required = false, defaultValue = "10") int size) {
         return employeeService.getEmployees(onlyActives, page, size);
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/{id}") //localhost:18080/api/employees/111
     public EmployeeDto getEmp(@PathVariable Long id){
         return employeeService.getEmployee(id);
     }

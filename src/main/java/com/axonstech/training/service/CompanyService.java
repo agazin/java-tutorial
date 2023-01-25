@@ -1,6 +1,7 @@
 package com.axonstech.training.service;
 
 import com.axonstech.training.entity.Company;
+import com.axonstech.training.exception.BusinessException;
 import com.axonstech.training.repository.CompanyRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -22,13 +23,13 @@ public class CompanyService {
     }
 
     public Company getCompany(String id) {
-        return companyRepository.findById(id).get();
+        return companyRepository.findById(id).orElseThrow();
     }
 
-    public Company save(Company company) throws Exception {
+    public Company save(Company company) throws BusinessException {
         Optional<Company> oCompany = companyRepository.findByCompanyName(company.getCompanyName());
         if(oCompany.isPresent()){
-            throw new Exception("This Company is already taken");
+            throw new BusinessException("This Company is already taken");
         }
         return companyRepository.save(company);
     }
