@@ -17,7 +17,8 @@ public class Company {
     @Column(name = "company_name", nullable = false, unique = true)
     private String companyName;
 
-    @OneToMany(mappedBy = "company", cascade = CascadeType.REMOVE, orphanRemoval = true)
+//    @OneToMany(mappedBy = "company", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    @Transient
     private Set<Employee> employees = new LinkedHashSet<>();
 
     public String getCompanyCode() {

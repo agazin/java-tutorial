@@ -19,4 +19,5 @@ public class EmployeeDto implements Serializable {
     private Boolean active;
     private CompanyDto company;
     private Integer version;
+    private String companyName;
 }

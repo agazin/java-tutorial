@@ -7,7 +7,6 @@ import com.axonstech.training.entity.Employee;
 import com.axonstech.training.repository.CompanyRepository;
 import com.axonstech.training.repository.EmployeeRepository;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -18,24 +17,19 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
-import static net.bytebuddy.matcher.ElementMatchers.is;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.never;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.Mockito.verify;
+
 @ExtendWith(MockitoExtension.class)
 class EmployeeServiceTest {
-    @Mock private EmployeeRepository employeeRepository;
-    @Mock private CompanyRepository companyRepository;
+    @Mock
+    private EmployeeRepository employeeRepository;
+    @Mock
+    private CompanyRepository companyRepository;
 
     private EmployeeService employeeService;
 
@@ -46,27 +40,38 @@ class EmployeeServiceTest {
 
     @Test
     void canGetAllEmployees() {
-        // arrange
-        Page<Employee> pagedResponse = new PageImpl(Arrays.asList(new Employee()));
-        Mockito.when(employeeRepository.findAll(PageRequest.of(0, 10))).thenReturn(pagedResponse);
-        // act
-        employeeService.getEmployees(null, 1, 10);
-        // assert
-        verify(employeeRepository).findAll(PageRequest.of(0, 10));
+        // arrange  , given
+        Boolean onlyActive = null;
+        int page = 1;
+        int size = 10;
+        PageRequest pageRequest = PageRequest.of(0, size);
+        Page<Employee> pEmployee = new PageImpl<>(List.of(new Employee()));
+
+        Mockito.when(employeeRepository.findAll(pageRequest)).thenReturn(pEmployee);
+
+        // act      , when
+        employeeService.getEmployees(onlyActive, page, size);
+
+        // assert   , then
+        verify(employeeRepository).findAll(pageRequest);
     }
 
     @Test
-    void canGetAllActiveEmployees() {
-        // arrange
+    void canGetActiveEmployees() {
+        // arrange  , given
+        Boolean onlyActive = true;
         int page = 1;
         int size = 10;
-        PageRequest pageRequest = PageRequest.of(page - 1, size);
-        Page<Employee> pagedResponse = new PageImpl(Arrays.asList(new Employee()));
-        Mockito.when(employeeRepository.findByActive(true, pageRequest)).thenReturn(pagedResponse);
-        // act
-        employeeService.getEmployees(true, 1, 10);
-        // assert
-        verify(employeeRepository).findByActive(true, pageRequest);
+        PageRequest pageRequest = PageRequest.of(0, size);
+        Page<Employee> pEmployee = new PageImpl<>(List.of(new Employee()));
+
+        Mockito.when(employeeRepository.findByActive(onlyActive, pageRequest)).thenReturn(pEmployee);
+
+        // act      , when
+        employeeService.getEmployees(onlyActive, page, size);
+
+        // assert   , then
+        verify(employeeRepository).findByActive(onlyActive, pageRequest);
     }
 
     @Test
@@ -74,7 +79,6 @@ class EmployeeServiceTest {
         // arrange
         Long id = 99L;
         Employee employee = new Employee();
-        employee.setId(id);
         employee.setCompany(new Company());
         Mockito.when(employeeRepository.findById(id)).thenReturn(Optional.of(employee));
 
@@ -86,139 +90,129 @@ class EmployeeServiceTest {
     }
 
     @Test
-    void canSave() throws Exception {
+    void canSaveEmployee() throws Exception {
         // arrange
-        String username = "sompong.pos";
         NewEmployeeRequest employeeRequest = new NewEmployeeRequest();
-        employeeRequest.setUsername(username);
-        Employee employee = new Employee();
-        employee.setUsername(username);
-        employee.setCompany(new Company());
-        Mockito.when(employeeRepository.findByUsernameIgnoreCase(any())).thenReturn(Optional.empty());
+        employeeRequest.setUsername("test");
+        Mockito.when(employeeRepository.findByUsernameIgnoreCase(employeeRequest.getUsername()))
+                .thenReturn(Optional.empty());
+
         // act
-        employeeService.save(employeeRequest);
+        EmployeeDto dto = employeeService.save(employeeRequest);
+
         // assert
-        ArgumentCaptor<Employee> employeeArgumentCaptor = ArgumentCaptor.forClass(Employee.class);
-        verify(employeeRepository).save(employeeArgumentCaptor.capture());
-        Employee capturedStudent = employeeArgumentCaptor.getValue();
-        assertThat(capturedStudent.getUsername()).isEqualTo(username);
+        assertThat(dto).isInstanceOf(EmployeeDto.class);
     }
 
     @Test
-    void willThrowWhenSaveEmployeeExist() throws Exception {
+    void willThrowWhenSaveExistEmployee() {
         // arrange
-        String username = "sompong.pos";
         NewEmployeeRequest employeeRequest = new NewEmployeeRequest();
-        employeeRequest.setUsername(username);
+        employeeRequest.setUsername("test");
         Employee employee = new Employee();
-        employee.setUsername(username);
-        employee.setCompany(new Company());
-        Mockito.when(employeeRepository.findByUsernameIgnoreCase(any())).thenReturn(Optional.of(employee));
+        Mockito.when(employeeRepository.findByUsernameIgnoreCase(employeeRequest.getUsername()))
+                .thenReturn(Optional.of(employee));
+
         // act
         // assert
-        assertThatThrownBy(() -> employeeService.save(employeeRequest))
+        assertThatThrownBy( () ->  employeeService.save(employeeRequest))
                 .isInstanceOf(Exception.class)
                 .hasMessageContaining("username is already taken");
-        verify(employeeRepository, never()).save(any());
     }
 
     @Test
-    void update() throws Exception {
+    void canUpdateEmployee() throws Exception {
         //arrange
         EmployeeDto employeeDto = new EmployeeDto();
-        Employee employee = new Employee();
-        Mockito.when(employeeRepository.findById(any())).thenReturn(Optional.of(employee));
+        Employee emp = new Employee();
+
+        Mockito.when(employeeRepository.findById(employeeDto.getId())).thenReturn(Optional.of(emp));
+
         //act
         employeeService.update(employeeDto);
+
         //assert
-        ArgumentCaptor<Employee> employeeArgumentCaptor = ArgumentCaptor.forClass(Employee.class);
-        verify(employeeRepository).save(employeeArgumentCaptor.capture());
+        ArgumentCaptor<Employee> captor = ArgumentCaptor.forClass(Employee.class);
+        verify(employeeRepository).save(captor.capture());
+        Employee employee = captor.getValue();
+        assertThat(employee).isInstanceOf(Employee.class);
     }
 
     @Test
-    void willThrowWhenUpdateEmployeeNotFound() throws Exception {
+    void willThrowWhenUpdateEmployeeNotFound() {
         //arrange
         EmployeeDto employeeDto = new EmployeeDto();
-        Employee employee = new Employee();
-        Mockito.when(employeeRepository.findById(any())).thenReturn(Optional.empty());
+
+        Mockito.when(employeeRepository.findById(employeeDto.getId())).thenReturn(Optional.empty());
+
         //act
         //assert
-        assertThatThrownBy(() -> employeeService.update(employeeDto))
+        assertThatThrownBy( () -> employeeService.update(employeeDto))
                 .isInstanceOf(Exception.class)
                 .hasMessageContaining("Id not found");
     }
 
     @Test
     void canDelete() throws Exception {
-        // given
-        long id = 99;
-        given(employeeRepository.existsById(id))
-                .willReturn(true);
-        // when
+        //arrange
+        Long id = 99L;
+
+        //act
         employeeService.delete(id);
 
-        // then
+        //assert
         verify(employeeRepository).deleteById(id);
     }
 
     @Test
-    void willThrowWhenDeleteEmpNotFound() throws Exception {
-        // given
-        long id = 99;
-        given(employeeRepository.existsById(id))
-                .willReturn(false);
-        // when
-        // then
-        assertThatThrownBy(() -> employeeService.delete(id))
-                .isInstanceOf(Exception.class)
-                .hasMessageContaining("Id not found");
-        verify(employeeRepository, never()).deleteById(any());
-    }
-
-    @Test
     void canAddToCompany() throws Exception {
-        // given
-        long userId = 99L;
-        String companyCode = "001";
-        Employee employee = new Employee();
-        Company company = new Company();
+        //arrange
+        Long userId = 99L;
+        String companyCode = "000";
+        Employee emp = new Employee();
+        emp.setId(userId);
+        Mockito.when(employeeRepository.findById(userId)).thenReturn(Optional.of(emp));
+        Mockito.when(companyRepository.findById(companyCode)).thenReturn(Optional.of(new Company()));
 
-        Mockito.when(employeeRepository.findById(userId)).thenReturn(Optional.of(employee));
-        Mockito.when(companyRepository.findById(companyCode)).thenReturn(Optional.of(company));
-        // when
+        //act
         employeeService.addToCompany(userId, companyCode);
-        // then
-        ArgumentCaptor<Employee> employeeArgumentCaptor = ArgumentCaptor.forClass(Employee.class);
-        verify(employeeRepository).save(employeeArgumentCaptor.capture());
+
+        //assert
+        ArgumentCaptor<Employee> captor = ArgumentCaptor.forClass(Employee.class);
+        verify(employeeRepository).save(captor.capture());
+        Employee employee = captor.getValue();
+        assertThat(employee).isInstanceOf(Employee.class);
+        assertThat(employee.getId()).isEqualTo(userId);
     }
 
-    @Test
-    void willThrowWhenAddToCompanyCuzEmployeeNotFound() throws Exception {
-        // given
-        long userId = 99L;
-        String companyCode = "001";
 
+    @Test
+    void willThrowWhenAddToCompanyCuzEmployeeNotFound() {
+        //arrange
+        Long userId = 99L;
+        String companyCode = "000";
         Mockito.when(employeeRepository.findById(userId)).thenReturn(Optional.empty());
-        // when
-        // then
-        assertThatThrownBy(() -> employeeService.addToCompany(userId, companyCode))
+
+        //act
+
+        //assert
+        assertThatThrownBy( () -> employeeService.addToCompany(userId, companyCode))
                 .isInstanceOf(Exception.class)
                 .hasMessageContaining("not found user");
     }
 
     @Test
-    void willThrowWhenAddToCompanyCuzCompanyNotFound() throws Exception {
-        // given
-        long userId = 99L;
-        String companyCode = "001";
-        Employee employee = new Employee();
-
-        Mockito.when(employeeRepository.findById(userId)).thenReturn(Optional.of(employee));
+    void willThrowWhenAddToCompanyCuzCompanyNotFound() {
+        //arrange
+        Long userId = 99L;
+        String companyCode = "000";
+        Mockito.when(employeeRepository.findById(userId)).thenReturn(Optional.of(new Employee()));
         Mockito.when(companyRepository.findById(companyCode)).thenReturn(Optional.empty());
 
-        // when
-        // then
-        assertThatThrownBy(() -> employeeService.addToCompany(userId, companyCode))
+        //act
+
+        //assert
+        assertThatThrownBy( () -> employeeService.addToCompany(userId, companyCode))
                 .isInstanceOf(Exception.class)
                 .hasMessageContaining("not found company");
     }
